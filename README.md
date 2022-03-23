@@ -5,4 +5,4 @@ Portfolio Website
 
 Testing linking to my other projects:
 
-- [Diamond Internship](https://github.com/Sharkmas6/Diamond_ML)
+- [Diamond Internship](Diamond_ML)
