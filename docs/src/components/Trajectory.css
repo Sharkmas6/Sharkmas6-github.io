@@ -1,0 +1,51 @@
+/* General container */
+#controlDiv{
+    box-shadow: 0px 0px 5px #888888;
+    padding: 10px 0 20px 0;
+    margin-bottom: 20px;
+    margin-top: 30px;
+    background-color: antiquewhite;
+}
+
+#controlDiv > * {
+    display: inline-block;
+    vertical-align: top;
+    margin-right: 30px;
+}
+/* General container */
+
+/* Sliders */
+#sliderDiv > ul > li >*:first-child {
+    cursor: pointer;
+}
+
+#sliderDiv > ul > li >*:first-child:hover {
+    background-color: #888888;
+    border: 0px solid #000000;
+    border-radius: 10px;
+    color: azure;
+}
+
+.sliderLabel{
+    display: inline-block;
+    text-align: right;
+    width: 50px;
+}
+
+.sliderValue{
+    display: inline-block;
+    text-align: left;
+    width: 30px;
+}
+
+#submitButton{
+    margin-top: 15px;
+}
+/* Sliders */
+
+/* InfoBox */
+#infoDiv {
+    width: 30%;
+    margin-right: 0;
+}
+/* /InfoBox */
