@@ -9,6 +9,17 @@ import { MathJax, MathJaxContext} from 'better-react-mathjax';
 
 const Plot = createPlotlyComponent(Plotly);
 
+const ColorBLUE = "#1f77b4";
+const ColorORANGE = "#ff7f0e";
+const ColorGREEN = "#2ca02c";
+const ColorRED = "#d62728";
+const ColorPURPLE = "#9467bd";
+const ColorBROWN = "#8c564b";
+const ColorPINK = "#e377c2";
+const ColorGRAY = "#7f7f7f";
+const ColorYELLOW = "#bcbd22";
+const ColorTEAL = "#17becf";
+
 
 
 function linspace(start, stop, num, endpoint = true) {
@@ -29,9 +40,10 @@ function trajectory(tMax, num=50, x0=0, y0=0, v0=0, v0ang=0, g=9.81, k=0, m=1) {
   const v0angRad = degToRad(v0ang);
 
   // calculate x/y position arrays
-  var xi, yi, vxi, vyi, vi, axi, ayi, ai;
+  var xi, yi, ri, vxi, vyi, vi, axi, ayi, ai;
   var x = [x0];
   var y = [y0];
+  var r = [Math.sqrt(x0**2 + y0**2)];
   var vx = [v0 * Math.cos(v0angRad)];
   var vy = [v0 * Math.sin(v0angRad)];
   var v = [Math.sqrt(vx[0]*vx[0] + vy[0]*vy[0])];
@@ -61,10 +73,12 @@ function trajectory(tMax, num=50, x0=0, y0=0, v0=0, v0ang=0, g=9.81, k=0, m=1) {
     // update positions
     xi = x[i-1] + vxi * dt;
     yi = y[i-1] + vyi * dt;
+    ri = Math.sqrt(xi**2 + yi**2);
     x.push(xi);
     y.push(yi);
+    r.push(ri);
   };
-  return {x:x, y:y, vx:vx, vy:vy, v:v, ax:ax, ay:ay, a:a, t:t};
+  return {x:x, y:y, r:r, vx:vx, vy:vy, v:v, ax:ax, ay:ay, a:a, t:t};
 }
 
 function trajectoryToEnergy(coordsObj, m=1, g=9.81) {
@@ -104,40 +118,51 @@ class TrajectoryApp extends React.Component {
     infoArg: "",
 
     // Plotly plotting stuff
-    plotData: [],
-    plotLayout: {
+    plotData1: [],
+    plotData2: [],
+    plotLayout1: {
       title: "Trajectory",
-      height: 5*window.innerHeight/3,
-      grid: {
-        rows: 5,
-        columns: 1,
-        subplots: [["xy"], ["x2y2"], ["x2y3"], ["x2y4"], ["x2y5"]]
-      },
+      height: 2 * window.innerHeight/3,
       xaxis: {
         title: "X (m)",
       },
       yaxis: {
         title: "Y (m)",
+      }
+    },
+    plotLayout2: {
+      title: "Quantities of motion",
+      height: 4 * window.innerHeight/3,
+      grid: {
+        rows: 4,
+        columns: 1,
+        subplots: [["xy"], ["xy2"], ["xy3"], ["xy4"]]
       },
-      xaxis2: {
+      colorway: [
+        ColorBLUE, ColorORANGE, ColorGREEN,
+        ColorBLUE, ColorORANGE, ColorGREEN,
+        ColorBLUE, ColorORANGE, ColorGREEN,
+        ColorYELLOW, ColorRED, ColorGREEN
+      ],
+      xaxis: {
         title: "Time (s)",
       },
-      yaxis2: {
+      yaxis: {
         title: "Position (m)",
       },
-      yaxis3: {
+      yaxis2: {
         title: "Velocity (m/s)",
       },
-      yaxis4: {
+      yaxis3: {
         title: "Acceleration (m/s^2)",
       },
-      yaxis5: {
-        title: "Energy (J)",
-      },
+      yaxis4: {
+        title: "Energy (J)"
+      }
     },
     plotConfig: {
       responsive: true
-    },
+    }
   }
 
   infoStore = {
@@ -171,44 +196,45 @@ class TrajectoryApp extends React.Component {
         this.setState({x0: val});
         break;
       case "slider-y0":
-        this.setState({y0: val})
+        this.setState({y0: val});
         break;
       case "slider-v0":
-        this.setState({v0: val})
+        this.setState({v0: val});
         break;
       case "slider-v0ang":
-        this.setState({v0ang: val})
+        this.setState({v0ang: val});
         break;
       case "slider-num":
-        this.setState({num: val})
+        this.setState({num: val});
         break;
       case "slider-g":
-        this.setState({g: val})
+        this.setState({g: val});
         break;
       case "slider-k":
-        this.setState({k: val})
+        this.setState({k: val});
         break;
       case "slider-m":
-        this.setState({m: val})
+        this.setState({m: val});
         break;
-      default: break;
+      default:
+        console.log("No matching slider found");
+        break;
     }
   }
 
   handleSubmit = (e) => {
-    try {
-      e.preventDefault();
-    } catch (error) {}
     const path = trajectory(this.state.tMax, this.state.num, this.state.x0, this.state.y0, this.state.v0, this.state.v0ang, this.state.g, this.state.k, this.state.m);
     const energy = trajectoryToEnergy(path, this.state.m, this.state.g);
     this.updatePlotData(path, energy);
   }
 
   updatePlotData = (pathObj, energyObj) => {
-    let x, y, vx, vy, v, ax, ay, a, KE, PE, TE, t;
+    let x, y, r, vx, vy, v, ax, ay, a, KE, PE, TE, t;
     // position
     x = pathObj.x;
     y = pathObj.y;
+    r = pathObj.r;
+    console.log(x);
     // velocities
     vx = pathObj.vx;
     vy = pathObj.vy;
@@ -223,103 +249,105 @@ class TrajectoryApp extends React.Component {
     PE = energyObj.PE;
     TE = energyObj.TE;
     this.setState({
-      plotData: [
+      plotData1: [
         {
           x: x,
           y: y,
           mode: "lines",
           name: "Trajectory",
-        },
+        }
+      ],
+      plotData2: [
         {
           x: t,
           y: x,
-          xaxis: "x2",
-          yaxis: "y2",
           mode: "lines",
-          name: "Horizontal Position",
+          name: "Horizontal"
         },
         {
           x: t,
           y: y,
-          xaxis: "x2",
-          yaxis: "y2",
           mode: "lines",
-          name: "Vertical Position",
+          name: "Vertical"
+        },
+        {
+          x: t,
+          y: r,
+          mode: "lines",
+          name: "Total"
         },
         {
           x: t,
           y: vx,
-          xaxis: "x2",
-          yaxis: "y3",
+          yaxis: "y2",
           mode: "lines",
-          name: "Horizontal Velocity",
+          name: "Horizontal",
+          showlegend: false
         },
         {
           x: t,
           y: vy,
-          xaxis: "x2",
-          yaxis: "y3",
+          yaxis: "y2",
           mode: "lines",
-          name: "Vertical Velocity",
+          name: "Vertical",
+          showlegend: false
         },
         {
           x: t,
           y: v,
-          xaxis: "x2",
-          yaxis: "y3",
+          yaxis: "y2",
           mode: "lines",
-          name: "Modulus Velocity",
+          name: "Total",
+          showlegend: false
         },
         {
           x: t,
           y: ax,
-          xaxis: "x2",
-          yaxis: "y4",
+          yaxis: "y3",
           mode: "lines",
-          name: "Horizontal Acceleration",
+          name: "Horizontal",
+          showlegend: false
         },
         {
           x: t,
           y: ay,
-          xaxis: "x2",
-          yaxis: "y4",
+          yaxis: "y3",
           mode: "lines",
-          name: "Vertical Acceleration",
+          name: "Vertical",
+          showlegend: false
         },
         {
           x: t,
           y: a,
-          xaxis: "x2",
-          yaxis: "y4",
+          yaxis: "y3",
           mode: "lines",
-          name: "Modulus Acceleration",
-        },
-        {
-          x: t,
-          y: KE,
-          xaxis: "x2",
-          yaxis: "y5",
-          mode: "lines",
-          name: "Kinetic Energy",
+          name: "Total",
+          showlegend: false
         },
         {
           x: t,
           y: PE,
-          xaxis: "x2",
-          yaxis: "y5",
+          yaxis: "y4",
           mode: "lines",
-          name: "Potential Energy",
+          name: "Potential"
+        },
+        {
+          x: t,
+          y: KE,
+          yaxis: "y4",
+          mode: "lines",
+          name: "Kinetic"
         },
         {
           x: t,
           y: TE,
-          xaxis: "x2",
-          yaxis: "y5",
+          yaxis: "y4",
           mode: "lines",
-          name: "Total Energy",
+          name: "Total",
+          showlegend: false
         },
       ]
-    })
+    });
   }
 
   componentDidMount() {
@@ -391,7 +419,9 @@ class TrajectoryApp extends React.Component {
           </div>
           {/* Show plot */}
           <div>
-            <Plot style={{position:"relative"}} data={this.state.plotData} layout={this.state.plotLayout} config={this.state.plotConfig}/>
+            <Plot style={{position:"relative"}} data={this.state.plotData1} layout={this.state.plotLayout1} config={this.state.plotConfig}/>
+            <Plot style={{position:"relative"}} data={this.state.plotData2} layout={this.state.plotLayout2} config={this.state.plotConfig}/>
+            {/* <Plot style={{position:"relative"}} data={this.state.plotData} layout={this.state.plotLayout} config={this.state.plotConfig}/> */}
           </div>
           {/* Show plot */}
         </div>
